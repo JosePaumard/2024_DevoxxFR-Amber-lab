@@ -11,7 +11,7 @@ public class Main {
         var flightMonitoring = FlightMonitoring.getInstance();
 
         var f1 = new IDFlight("PaAt");
-        var f2 = new IDFlight("AmNY");
+        var f2 = new IDFlight("AmNe");
         var f3 = new IDFlight("LoMi");
         var f4 = new IDFlight("FrWa");
 

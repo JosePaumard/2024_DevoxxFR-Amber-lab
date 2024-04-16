@@ -37,4 +37,8 @@ The goal of the refactoring is to organize the application in such a way that th
 
 Then, you will see how adding the support for multileg flights can be done very easily, using sealed types and pattern matching. 
 
-## Fixing the Dependencies
+## Step 0: Exploring the Application
+
+You can launch the application as it is by running the `Main` class. As you can see, this class creates four flights: Paris Atlanta, Amsterdam New-York, London Miami, and Francfort Washington. It then decides to follow the prices of these four flights. If you follow the code that is being executed, you will see that these flights will see their price change every 500ms. Then two of these flights are displayed in the GUI (the console): London Miami and Francfort Washington. 
+
+Running this code show you the flights that are created, then monitored, and then displayed. 
