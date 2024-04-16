@@ -1,16 +1,13 @@
 package org.paumard.flightmonitoring.gui;
 
-import org.paumard.flightmonitoring.db.model.Flight;
+import org.paumard.flightmonitoring.business.service.FlightGUIService;
+import org.paumard.flightmonitoring.business.model.Flight;
 
-public class FlightGUI {
-
-    public static FlightGUI getInstance() {
-        return new FlightGUI();
-    }
+public class FlightGUI implements FlightGUIService {
 
     public void displayFlight(Flight flight) {
         System.out.println(
                 "Flight from " + flight.from().name() + " to " + flight.to().name() +
-                ": price is now " + flight.price().price());
+                ": price is now " + flight.price());
     }
 }

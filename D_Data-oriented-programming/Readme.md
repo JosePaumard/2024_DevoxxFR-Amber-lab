@@ -42,3 +42,269 @@ Then, you will see how adding the support for multileg flights can be done very 
 You can launch the application as it is by running the `Main` class. As you can see, this class creates four flights: Paris Atlanta, Amsterdam New-York, London Miami, and Francfort Washington. It then decides to follow the prices of these four flights. If you follow the code that is being executed, you will see that these flights will see their price change every 500ms. Then two of these flights are displayed in the GUI (the console): London Miami and Francfort Washington. 
 
 Running this code show you the flights that are created, then monitored, and then displayed. 
+
+## Step 1: Fixing the Dependencies
+
+The first step consists in fixing the dependency problems this application suffers. What we want is that the technical modules (database, price service, GUI) depend on the business module, and not the opposite. For that, you are going to create interfaces and record, and place them in the right module of the current application. 
+
+### Fixing the relation between the Business module and the GUI
+
+To prevent the business module to depend on the GUI, you need to create an interface in the Business module (`D_Flight-business-process`) of your application. This interface has only one method. Calling it displays a flight on the GUI. The GUI thus becomes a client of your business process. 
+
+#### Adding Interfaces and Records
+
+You can create the following interface in the `D_Flight-business-process` module. You can put it in a `service` package for instance. 
+
+```java
+public interface FlightGUIService {
+    void displayFlight(Flight flight);
+}
+```
+
+And because you should not need to depend on the database anymore, you can also create the following records `Flight` and `City`. You can put them in a `model` package for instance.
+
+```java
+public record Flight(City from, City to) {}
+```
+
+```java
+public record City(String name) {}
+```
+
+Be careful when doing this refactoring: your `FlightGUIService` should depend on your records, not on the classes defined in the `A_Database` module. 
+
+#### Refactoring the D_Flight-business-process Module
+
+Now you can refactor the `FlightMonitoring` class. Remove the static field `FlightGUI flightGUIService` and replace it by a private non-static field `FlightGUIService flightGUIService`. Do not initialize it for the moment. 
+
+This class is not pulling its own dependency anymore, which is one less problem. You need to make the `launchDisplay()` method non-static, because it now needs to read an instance field. 
+
+The `FlightMonitoring.getInstance()` method does not compile anymore, which is fine because you will remove it very soon. In the meantime you can just remove the faulty method that calls `launchDisplay()`. 
+
+Your problem now is that you have two different classes named `Flight`: one that is coming from the `A_Database` module, and another one that is the record you just created. Let us manually change the imports of this class to make sure that you are importing the `Flight` record you just created, and not the other one.
+
+The `FlightMonitoring.followFlight()` method is not compiling anymore, but you can fix it by replacing the `Flight flight` declaration by a `var flight` declaration. 
+
+The last problem you need to fix is in the `FlightMonitoring.monitorFlight()` method. The problem here has to be fixed with an adapter. You get an instance of the `Flight` class defined in the `A_Database` module, to an instance of your `Flight` record. 
+
+The code of this method should now look like the following:
+
+```java
+public void monitorFlight(IDFlight idFlight) {
+    var flight = dbService.fetchFlight(idFlight);
+    // Adaptation
+    City from = new City(flight.from().name());
+    City to = new City(flight.to().name());
+    Flight newFlight = new Flight(from, to);
+    monitoredFlights.put(idFlight, newFlight);
+}
+```
+
+#### Refactoring the C_Graphical-user-interface Code
+
+Now you need to refactor the other side of this dependency: the `C_Graphical-user-interface` module. 
+
+The `FlightGUI` class should implement the `FlightGUIService` interface you defined in the `D_Flight-business-process` module. For that, you need to declare that the `C_Graphical-user-interface` module depends on the `D_Flight-business-process` module. So you need to open the POM files of both modules:
+
+1. `D_Flight-business-process` module POM: remove the dependency to the `C_Graphical-user-interface` module.
+2. And in the `C_Graphical-user-interface` module POM:  add a dependency to the `D_Flight-business-process` module.
+
+If your refresh your Maven configuration in your IDE, you should now be able to import the `FlightGUIService` interface in your  `FlightGUI` class. Be careful in this class, because the `Flight` object that this method receives as a parameter is now the record you defined in the `D_Flight-business-process`, not the one in the `D_Flight-business-process` module. 
+
+You can also delete the ugly `FlightGUI.getInstance()` static method, that is not called anymore.
+
+#### Fixing the Price Property of Flight
+
+How can you fix the fact that your `Flight` record does not have a price? Your problem here is that the price changes, and that a record is non-modifiable, so you cannot simply add a component to this record, because you will not be able to change it. 
+
+The solution to this problem will come when you have refactored the relation between the `D_Flight-business-process` module and the `B_Price-monitoring` module. In the meantime, you can just stub it by creating an empty `price()` method on your `Flight` record. We will come to it again later.  
+
+### Fixing the relation between the Business module and the Price Monitoring Module
+
+Let us use the same technique to fix the relation between the `D_Flight-business-process` module and the `B_Price-monitoring` module.
+
+#### Refactoring the D_Flight-business-process Module
+
+The `FlightConsumer` interface is defined in the `B_Price-monitoring` module, thus imposing a dependency in the wrong direction. Let us make it so that the `D_Flight-business-process` module defines this interface contract, and while we are at it, also defines the objects that are moved between these two modules. 
+
+1. Move the `FlightConsumer` interface to the `D_Flight-business-process` module, for instance in a `service` package.
+2. Make it consume an instance of `Price`, a record you create in the `D_Flight-business-process` module, for instance in a `model` package. 
+
+The interface should now look like this:
+
+```java
+public interface FlightConsumer {
+    void updateFlight(Price price);
+}
+```
+
+You also need to create an interface to model what this `B_Price-monitoring` module is doing. Following what you did with the GUI, this interface needs to be defined on the `D_Flight-business-process` module and implemented in the `B_Price-monitoring` module. 
+
+This interface can be the following, you can put it in a `service` package of the `D_Flight-business-process` module.
+
+```java
+public interface PriceMonitoringService {
+    void followPrice(FlightID flightID, FlightConsumer consumer);
+}
+```
+
+It needs a `FlightID` object, that you can create as a record in your `D_Flight-business-process` module, in the `model` package for instance. 
+
+```java
+public record FlightID(String id) {}
+```
+
+You now need to fix the `FlightMonitoring` class, following the same principles as previously.
+
+1. Make the `priceMonitoringService` non-static, and remove the ugly call to `FlightPriceMonitoringService.getInstance()`. We will fix the initialization of this field later. 
+2. Remove the call to `priceMonitoringService.updatePrices()`. It is made in a method that will be removed anyway.
+3. You need to fix the import on the `FlightID` class
+
+At this point, your `D_Flight-business-process` module should not have anymore dependency on the `B_Price-monitoring` module. This module, on the contrary, needs to depend on the `D_Flight-business-process` module, where the interface it should implement, and the consumer it should called are defined. 
+
+So you need to open the POM files of both modules:
+
+1. In the `D_Flight-business-process` module POM: remove the dependency to the `B_Price-monitoring` module.
+2. And in the `B_Price-monitoring` module POM:  add a dependency to the `D_Flight-business-process` module. 
+
+Do not forget to refresh your Maven configuration in your IDE.
+
+#### Refactoring the B_Price-monitoring Module
+
+You can see now that the class `FlightPriceMonitoringService` is not compiling anymore, which is expected. All you need to do is to fix the imports: it should only depend on the records of the `D_Flight-business-process` module. 
+
+You can now delete the classes `FlighID` and `FlightPrice` of this module, as they are not used anymore. 
+
+You can also delete the ugly `FlightPriceMonitoringService.getInstance()` static method, that is not called anymore.  
+
+### Fixing the Dependency between Business module and the Database Module
+
+The last wrong relation you need to fix is the relation between the `D_Flight-business-process` module and the `A_Database` module. 
+
+You are going to follow the same principle, that is to create an interface in the `D_Flight-business-process` module and implement it in the `A_Database` module.
+
+#### Refactoring the D_Flight-business-process Module
+
+You can create this interface in the `service` package of the `D_Flight-business-process` module, and use it in the `FlightMonitoring` class. 
+
+This interface can look like this one. `Flight` and `FlightID` are the records you defined in the `D_Flight-business-process` module. 
+
+```java
+public interface DBService {
+    Flight fetchFlight(FlightID flightID);
+}
+```
+
+Following this, you can get rid of your last call to a `getInstance()` in the `FlightMonitoring` class. 
+
+Several fixes should be made in the `FlightMonitoring.followFlight()` method. 
+1. Make it take a `FLightID` instead of an `IDFlight`. Now you do not need your adapter code anymore.
+2. You will also need to create an empty `updatePrice()` method in your `Flight` record. We will fix this method later. 
+3. Also, make this `updatePrice()` method take an instance of the `Price` record ot the `D_Flight-business-process` module, instead of the `A_Database` one. It will make the `flightConsumer` easier to write, because you do not need any adaptation there  neither.
+
+Some more fixes are needed in the `FlightMonitoring.monitorFlight()` method.
+1. Make it take a `FLightID` instead of an `IDFlight`.
+2. Fix the `monitoredFlights` registry. Its keys should now be your record `FLightID`. 
+
+Your `FlightMonitoring` class should not depend on any class from the `A_Database` module anymore. You can check that in its imports.
+
+Now you can invert the dependency between the two modules `D_Flight-business-process` and `A_Database`. 
+1. In the `D_Flight-business-process` module POM: remove the dependency to the `A_Database` module.
+2. And in the `A_Database` module POM: add a dependency to the `D_Flight-business-process` module.
+
+If you refresh your Maven configuration in your IDE, your `E_Main` module should not compile anymore, which is OK for now. 
+
+#### Refactoring the A_Database Module
+
+The same will apply to the `A_Database` module, that should become a client of the `D_Flight-business-process` module. 
+
+Your `FlightDBService` class should implement the `DBService` interface from your `D_Flight-business-process` module.
+
+Also, this class should now depend on the model object your `D_Flight-business-process` module is providing. That includes `City`, `Flight` and `IDFlight`. It is perfectly OK for this module to use its own object model, since in a real application it would probably map it to some kind of database. But it is its responsibility to  adapt its object model to the requirements of your business modules. 
+
+An example of such an adaptation is the implementation of the `FlightDBService.fetchFlight()` method. This method takes an instance of `FlightID` as a parameter, which an object sent by the `D_Flight-business-process` module. But it needs a primary key to access the right flight, that is of type `IDFlight`, defined in this `A_Database` module. So an adaptation should be done here, between these two instances. Doing this adaptation is the responsibility of the `A_Database` module.
+
+### Fixing the Main Module
+
+Fixing the `E_Main` module consists in two things. 
+
+First, the `Main` class does not compile anymore. You should now create instances of `FlightID` instead of `IDFlight` to make the code compile. 
+
+Second, you should get rid of this ugly call to `FlightMonitoring.getInstance()`. All the instantiations of the interfaces you created should be done there. Once you have these instances, you should send them to the `FlightMonitoring` class constructor. You will to add dependencies to this module. This module has a dependency to all the other modules of this application. 
+
+In the end, creating your `FlightMonitoring` instance should look like this. 
+
+```java
+DBService dbService =
+        new FlightDBService();
+FlightGUIService guiService =
+        new FlightGUI();
+PriceMonitoringService monitoringService =
+        new FlightPriceMonitoringService();
+var flightMonitoring = 
+        new FlightMonitoring(
+                dbService, 
+                guiService, 
+                monitoringService);
+```
+
+And the constructor of your `FlightMonitoring` class should look like this. 
+
+```java
+public class FlightMonitoring {
+    private final DBService dbService;
+    private final PriceMonitoringService priceMonitoringService;
+    private final FlightGUIService flightGUIService;
+
+    public FlightMonitoring(
+            DBService dbService,
+            FlightGUIService guiService,
+            PriceMonitoringService monitoringService) {
+        this.dbService = dbService;
+        flightGUIService = guiService;
+        priceMonitoringService = monitoringService;
+    }
+}
+```
+
+The last thing you need to do to have a working application is to launch the two services that update the prices in the background, and that displays automatically the prices you chose to follow. You need to call the two corresponding methods from your main method: 
+
+```java
+monitoringService.updatePrices();
+flightMonitoring.launchDisplay();
+```
+
+The `updatePrices()` may not be declared on the `PriceMonitoringService` interface. So you may need to add it.
+
+### Fixing the Prices
+
+One thing was left aside: the updating of the prices. 
+
+At this point, if your followed the instructions, you should have a `Flight.updatePrice(Price price)` method with an empty implementation. You cannot make a record modifiable. So from here you have two solutions: either you make is a regular class, or use a registry. Let us make a registry here. 
+
+In that case, your `Flight` record could look like the following. 
+
+```java
+public record Flight(City from, City to) {
+
+    public Flight {
+        Objects.requireNonNull(from);
+        Objects.requireNonNull(to);
+    }
+
+    private static Map<Flight, Price> pricePerFlight =
+            new ConcurrentHashMap<>();
+
+    public Price price() {
+        return pricePerFlight.get(this);
+    }
+
+    public void updatePrice(Price price) {
+        pricePerFlight.put(this, price);
+    }
+}
+```
+
+## Step 3: Launching the Application Again
+
+At this point, you should be able to launch your application properly again. All your dependencies has been fixed. Your application is organized around your Business module, all the other modules are isolated behind interfaces. 

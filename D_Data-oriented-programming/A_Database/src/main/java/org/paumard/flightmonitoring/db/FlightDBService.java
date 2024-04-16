@@ -1,11 +1,15 @@
 package org.paumard.flightmonitoring.db;
 
-import org.paumard.flightmonitoring.db.model.*;
+import org.paumard.flightmonitoring.business.model.City;
+import org.paumard.flightmonitoring.business.model.Flight;
+import org.paumard.flightmonitoring.business.model.FlightID;
+import org.paumard.flightmonitoring.business.service.DBService;
+import org.paumard.flightmonitoring.db.model.IDFlight;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class FlightDBService {
+public class FlightDBService implements DBService {
 
     private static Map<String, City> cities = Map.ofEntries(
             Map.entry("Pa", new City("Paris")),
@@ -20,18 +24,15 @@ public class FlightDBService {
 
     private static Map<IDFlight, Flight> flights = new HashMap<>();
 
-    public static FlightDBService getInstance() {
-        return new FlightDBService();
-    }
+    public Flight fetchFlight(FlightID id) {
+        System.out.println("Fetching flight " + id);
 
-    public Flight fetchFlight(IDFlight flightId) {
-        System.out.println("Fetching flight " + flightId);
-
+        IDFlight flightId = new IDFlight(id.id());
         return flights.computeIfAbsent(flightId,
                 _ -> {
                     var from = flightId.flightId().substring(0, 2);
                     var to = flightId.flightId().substring(2);
-                    return new Flight(flightId, cities.get(from), cities.get(to), new Price(100), new Plane("Airbus A350"));
+                    return new Flight(cities.get(from), cities.get(to));
                 });
     }
 }

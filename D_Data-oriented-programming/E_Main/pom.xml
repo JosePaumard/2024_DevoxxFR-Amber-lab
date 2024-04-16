@@ -22,13 +22,21 @@
             <groupId>org.paumard</groupId>
             <artifactId>D_Flight-business-process</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.paumard</groupId>
             <artifactId>A_Database</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.paumard</groupId>
+            <artifactId>C_Graphical-user-interface</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.paumard</groupId>
+            <artifactId>B_Price-monitoring</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

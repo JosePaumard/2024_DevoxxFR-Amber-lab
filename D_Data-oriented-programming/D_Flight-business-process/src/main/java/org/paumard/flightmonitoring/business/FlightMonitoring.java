@@ -1,13 +1,12 @@
 package org.paumard.flightmonitoring.business;
 
-import org.paumard.flightmonitoring.db.FlightDBService;
-import org.paumard.flightmonitoring.db.model.Flight;
-import org.paumard.flightmonitoring.db.model.IDFlight;
-import org.paumard.flightmonitoring.db.model.Price;
-import org.paumard.flightmonitoring.gui.FlightGUI;
-import org.paumard.flightmonitoring.pricemonitoring.FlightPriceMonitoringService;
-import org.paumard.flightmonitoring.pricemonitoring.model.FlightConsumer;
-import org.paumard.flightmonitoring.pricemonitoring.model.FlightID;
+import org.paumard.flightmonitoring.business.model.City;
+import org.paumard.flightmonitoring.business.model.Flight;
+import org.paumard.flightmonitoring.business.model.FlightID;
+import org.paumard.flightmonitoring.business.service.DBService;
+import org.paumard.flightmonitoring.business.service.FlightConsumer;
+import org.paumard.flightmonitoring.business.service.FlightGUIService;
+import org.paumard.flightmonitoring.business.service.PriceMonitoringService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,34 +15,34 @@ import java.util.concurrent.TimeUnit;
 
 public class FlightMonitoring {
 
-    private static final Map<IDFlight, Flight> monitoredFlights = new ConcurrentHashMap<>();
+    private static final Map<FlightID, Flight> monitoredFlights = new ConcurrentHashMap<>();
 
-    private static final FlightDBService dbService =
-            FlightDBService.getInstance();
-    private static final FlightPriceMonitoringService priceMonitoringService =
-            FlightPriceMonitoringService.getInstance();
-    private static final FlightGUI flightGUIService =
-            FlightGUI.getInstance();
+    private final DBService dbService;
+    private final PriceMonitoringService priceMonitoringService;
+    private final FlightGUIService flightGUIService;
 
-    public static FlightMonitoring getInstance() {
-        priceMonitoringService.updatePrices();
-        launchDisplay();
-        return new FlightMonitoring();
+    public FlightMonitoring(
+            DBService dbService,
+            FlightGUIService guiService,
+            PriceMonitoringService monitoringService) {
+
+        this.dbService = dbService;
+        flightGUIService = guiService;
+        priceMonitoringService = monitoringService;
     }
 
-    public void followFlight(IDFlight idFlight) {
-        Flight flight = dbService.fetchFlight(idFlight);
-        FlightID flightID = new FlightID(idFlight.flightId());
-        FlightConsumer flightConsumer = price -> flight.updatePrice(new Price(price.price()));
-        priceMonitoringService.followPrice(flightID, flightConsumer);
+    public void followFlight(FlightID flightId) {
+        var flight = dbService.fetchFlight(flightId);
+        FlightConsumer flightConsumer = flight::updatePrice;
+        priceMonitoringService.followPrice(flightId, flightConsumer);
     }
 
-    public void monitorFlight(IDFlight idFlight) {
-        var flight = dbService.fetchFlight(idFlight);
-        monitoredFlights.put(idFlight, flight);
+    public void monitorFlight(FlightID flightId) {
+        var flight = dbService.fetchFlight(flightId);
+        monitoredFlights.put(flightId, flight);
     }
 
-    public static void launchDisplay() {
+    public void launchDisplay() {
         var executor = Executors.newScheduledThreadPool(1);
         Runnable task = () -> {
 //            System.out.println("Displaying " + monitoredFlights.size() + " flights");
