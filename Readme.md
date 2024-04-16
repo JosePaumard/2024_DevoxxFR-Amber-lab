@@ -3,22 +3,23 @@ Devoxx France 2024 Amber Lab
 
 ## Introduction
 
-This lab covers three elements of the Amber project:
+This lab covers four elements of the Amber project:
 
 1. Text blocks
 2. Records
 3. Sealed types and pattern matching
+4. Data oriented programming
 
-Each part is implemented in its own module, so that you can follow one or the other, independently. 
+Each part is implemented in its own module, so that you can follow one or the other, independently.
 
-The fourth part is about using Data Oriented Programming to refactor a small application. This part of the lab takes you through an  example where you can refactor a small application using sealed types, records, and pattern matching. The application you will have to refactor is currently written using an object-oriented approach. And it is not quite right: the core business module depends on its implementation details, namely the database and an external service. 
+The fourth part is about using Data Oriented Programming to refactor a small application. This part of the lab takes you through an  example where you can refactor a small application using sealed types, records, and pattern matching. The application you will have to refactor is currently written using an object-oriented approach. And it is not quite right: the core business module depends on its implementation details, namely the database and an external service.
 
-After your refactoring, these modules will depend on your core business module, and you will be able to enrich your object model using sealed types and records. 
+After your refactoring, these modules will depend on your core business module, and you will be able to enrich your object model using sealed types and records.
 
 
 ## Working on the Lab
 
-Each module contains its own Readme.md file, with the instructions and hints on how to work on the different parts of the lab. They are all independent, so you can choose the one you want to work on. 
+Each module contains its own Readme.md file, with the instructions and hints on how to work on the different parts of the lab. They are all independent, so you can choose the one you want to work on.
 
 ## References
 
