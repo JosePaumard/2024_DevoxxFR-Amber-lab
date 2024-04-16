@@ -24,8 +24,10 @@ public class FlightPriceMonitoringService implements PriceMonitoringService {
         var random = new Random(314L);
         var executor = Executors.newScheduledThreadPool(1);
         Runnable task = () -> {
-            for (var flightConsumer : registry.values()) {
-                flightConsumer.updateFlight(new Price(random.nextInt(80, 120)));
+            for (var entry : registry.entrySet()) {
+                var flightId = entry.getKey();
+                var flightConsumer = entry.getValue();
+                flightConsumer.updateFlight(flightId, new Price(random.nextInt(80, 120)));
             }
         };
         executor.scheduleAtFixedRate(task, 0, 500, TimeUnit.MILLISECONDS);

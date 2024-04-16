@@ -1,12 +1,12 @@
 package org.paumard.flightmonitoring.business;
 
-import org.paumard.flightmonitoring.business.model.City;
 import org.paumard.flightmonitoring.business.model.Flight;
 import org.paumard.flightmonitoring.business.model.FlightID;
 import org.paumard.flightmonitoring.business.service.DBService;
 import org.paumard.flightmonitoring.business.service.FlightConsumer;
 import org.paumard.flightmonitoring.business.service.FlightGUIService;
 import org.paumard.flightmonitoring.business.service.PriceMonitoringService;
+import org.paumard.flightmonitoring.business.util.Flights;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,9 +32,7 @@ public class FlightMonitoring {
     }
 
     public void followFlight(FlightID flightId) {
-        var flight = dbService.fetchFlight(flightId);
-        FlightConsumer flightConsumer = flight::updatePrice;
-        priceMonitoringService.followPrice(flightId, flightConsumer);
+        priceMonitoringService.followPrice(flightId, Flights::updatePrice);
     }
 
     public void monitorFlight(FlightID flightId) {
