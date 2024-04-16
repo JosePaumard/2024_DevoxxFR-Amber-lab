@@ -3,11 +3,12 @@ Devoxx France 2024 Amber Lab
 
 ## Introduction
 
-This lab covers three elements of the Amber project:
+This lab covers four elements of the Amber project:
 
 1. Text blocks
 2. Records
 3. Sealed types and pattern matching
+4. Data oriented programming
 
 Each part is implemented in its own module, so that you can follow one or the other, independently. 
 
