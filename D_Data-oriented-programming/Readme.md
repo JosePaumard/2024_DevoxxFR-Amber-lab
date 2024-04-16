@@ -39,11 +39,15 @@ Then, once this refactoring is done, you will see how adding the support for mul
 
 ## Step 0: Exploring the Application
 
+You can access the state of the code base at this step by checkouting the `DOP_Refactor-step00` of this Git repository.
+
 You can launch the application as it is by running the `Main` class. As you can see, this class creates four flights: Paris Atlanta, Amsterdam New-York, London Miami, and Francfort Washington. It then decides to follow the prices of these four flights. If you follow the code that is being executed, you will see that these flights will see their price change every 500ms. Then two of these flights are displayed in the GUI (the console): London Miami and Francfort Washington.
 
 Running this code show you the flights that are created, then monitored, and then displayed. Don't forget to stop the running of this application, because if you don't it will run forever.
 
 ## Step 1: Fixing the Dependencies
+
+You can access the state of the code base at this step by checkouting the `DOP_Refactor-step01` of this Git repository.
 
 The first step consists in fixing the dependency problems this application suffers. What we want is that the technical modules (database, price service, GUI) depend on the business module, and not the opposite. For that, you are going to create interfaces and records, and place them in the right modules of the current application.
 
@@ -313,9 +317,13 @@ public record Flight(City from, City to) {
 
 ## Step 2: Launching the Application Again
 
+You can access the state of the code base at this step by checkouting the `DOP_Refactor-step03` of this Git repository.
+
 At this point, you should be able to launch your application properly again. All your dependencies has been fixed. Your application is organized around your Business module, all the other modules are isolated behind interfaces.
 
 ## Step 3: Adding The Support For Multileg Flights
+
+You can access the state of the code base at this step by checkouting the `DOP_Refactor-step03` of this Git repository.
 
 A new business requirement has to be implemented: instead of supporting simple flights between cities, you need to support multileg flights.
 
